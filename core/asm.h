@@ -362,6 +362,11 @@ asm_vmwrite64 (ulong index, u64 val)
 	}
 }
 
+static inline void
+asm_vmwrite16 (ulong index, u16 val) {
+	asm_vmwrite(index, val);
+}
+
 /* 0f 01 c2                vmlaunch  */
 static inline void
 asm_vmlaunch (void)

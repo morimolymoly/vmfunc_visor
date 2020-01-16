@@ -44,6 +44,7 @@
 #include "vt_panic.h"
 #include "vt_shadow_vt.h"
 #include "vt_regs.h"
+#include "vt_ept.h"
 
 /* Check whether VMX is usable
    Return value:
@@ -222,6 +223,34 @@ vt_pcid_available (void)
 		return true;
 	return false;
 }
+
+#define VM_FUNCTION_EPTP_SWITCHING 0x1
+
+void enable_vmfunc0()
+{
+	u64 vmx_basic;
+	asm_rdmsr64 (MSR_IA32_VMX_VMFUNC, &vmx_basic);
+	if(vmx_basic & VM_FUNCTION_EPTP_SWITCHING) {
+		printf("vmfunc supported\n");
+	} else {
+		printf("vmfunc not supported\n");
+	}
+	
+	asm_vmwrite64(VM_FUNCTION_CTRL, VM_FUNCTION_CTL_EPTP_SWITCHING);
+
+	asm_vmwrite16(EPTP_INDEX, 0);
+
+	asm_vmwrite64(VE_INFO_ADDRESS, virt_to_phys((virt_t)&current->u.vt.ve));
+
+	asm_vmwrite64(EPTP_LIST_ADDRESS, virt_to_phys((virt_t)(current->u.vt.ept->ptr_list)));
+	
+    
+	// enable vmfunc
+	ulong procbased_ctls2;
+    asm_vmread (VMCS_PROC_BASED_VMEXEC_CTL2, &procbased_ctls2);
+	asm_vmwrite (VMCS_PROC_BASED_VMEXEC_CTL2, procbased_ctls2 | VMCS_PROC_BASED_VMEXEC_CTL2_ENABLE_VM_FUNCTIONS_BIT);
+}
+
 
 /* Initialize VMCS region
    INPUT:
@@ -527,6 +556,7 @@ vt_vminit (void)
 	vt__realmode_data_init ();
 	vt_msr_init ();
 	vt_paging_init ();
+	enable_vmfunc0();
 	call_initfunc ("vcpu");
 }
 

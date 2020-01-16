@@ -1039,6 +1039,16 @@ do_vmresume (void)
 }
 
 static void
+do_vmfunc (void)
+{
+	printf("vmfunc\n");
+	u64 eptp;
+    asm_vmread64 (VMCS_EPT_POINTER, &eptp);
+    printf("eptp: 0x%llx\n", eptp);
+	add_ip ();
+}
+
+static void
 vt__exit_reason (void)
 {
 	ulong exit_reason;
@@ -1133,6 +1143,9 @@ vt__exit_reason (void)
 		break;
 	case EXIT_REASON_VMRESUME:
 		do_vmresume ();
+		break;
+	case EXIT_REASON_VMFUNC:
+		do_vmfunc ();
 		break;
 	default:
 		printf ("Fatal error: handler not implemented.\n");

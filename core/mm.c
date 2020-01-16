@@ -525,6 +525,12 @@ page_to_phys (struct page *p)
 	return p->phys;
 }
 
+phys_t
+virt_to_phys(virt_t virt)
+{
+	return page_to_phys(virt_to_page(virt));
+}
+
 u32 vmm_start_inf()
 {
         return vmm_start_phys ;

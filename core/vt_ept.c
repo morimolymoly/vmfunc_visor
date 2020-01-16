@@ -40,28 +40,6 @@
 #include "vt_paging.h"
 #include "vt_regs.h"
 
-#define NUM_OF_EPTBL	1024
-#define EPTE_READ	0x1
-#define EPTE_READEXEC	0x5
-#define EPTE_WRITE	0x2
-#define EPTE_LARGE	0x80
-#define EPTE_ATTR_MASK	0xFFF
-#define EPTE_MT_SHIFT	3
-#define EPT_LEVELS	4
-
-struct vt_ept {
-	int cnt;
-	int cleared;
-	void *ncr3tbl;
-	phys_t ncr3tbl_phys;
-	void *tbl[NUM_OF_EPTBL];
-	phys_t tbl_phys[NUM_OF_EPTBL];
-	struct {
-		int level;
-		phys_t gphys;
-		u64 *entry[EPT_LEVELS];
-	} cur;
-};
 
 void
 vt_ept_init (void)
@@ -73,8 +51,18 @@ vt_ept_init (void)
 	alloc_page (&ept->ncr3tbl, &ept->ncr3tbl_phys);
 	memset (ept->ncr3tbl, 0, PAGESIZE);
 	ept->cleared = 1;
-	for (i = 0; i < NUM_OF_EPTBL; i++)
+	for (i = 0; i < NUM_OF_EPTBL; i++) {
 		alloc_page (&ept->tbl[i], &ept->tbl_phys[i]);
+	}
+	for (i = 0; i < NUM_OF_EPTBL; i++) {
+		alloc_page (&ept->tbl2[i], &ept->tbl_phys2[i]);
+	}
+
+	ept->ptr_list[0] = ept->tbl_phys[0];
+	//ept->ptr_list[1] = ept->tbl_phys2[0];
+	ept->ptr_list[1] = 0xffffff;
+	printf("ptrlist[0]=0x%llx ptrlist[1]=0x%llx\n", ept->ptr_list[0], ept->ptr_list[1]);
+
 	ept->cnt = 0;
 	ept->cur.level = EPT_LEVELS;
 	current->u.vt.ept = ept;
@@ -155,7 +143,7 @@ vt_ept_map_page_sub (struct vt_ept *ept, bool write, u64 gphys)
 	if (fakerom && write)
 		panic ("EPT: Writing to VMM memory.");
 	hattr = (cache_get_gmtrr_type (gphys) << EPTE_MT_SHIFT) |
-		EPTE_READEXEC | EPTE_WRITE;
+			EPTE_READEXEC | EPTE_WRITE;
 	if (fakerom)
 		hattr &= ~EPTE_WRITE;
 	*p = hphys | hattr;

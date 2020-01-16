@@ -63,6 +63,15 @@ struct vt_vmcs_info {
 struct vt_ept;
 struct shadow_vt;
 
+struct ve_except_info {
+	u32 reason;
+	u32 except_mask;
+	u64 exit;
+	u64 gla;
+	u64 gpa;
+	u16 eptp;
+};
+
 struct vt {
 	struct vt_vmentry_regs vr;
 	struct vt_vmcs_info vi;
@@ -73,6 +82,7 @@ struct vt {
 	struct vt_msrbmp *msrbmp;
 	struct vt_ept *ept;
 	struct shadow_vt *shadow_vt;
+	__attribute__ ((aligned (4096))) struct ve_except_info ve;
 	bool lme, lma;
 	bool first;
 	void *saved_vmcs;
