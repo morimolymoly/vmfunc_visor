@@ -1041,10 +1041,17 @@ do_vmresume (void)
 static void
 do_vmfunc (void)
 {
-	printf("vmfunc\n");
+	printf("vmfuncvisor\n");
 	u64 eptp;
     asm_vmread64 (VMCS_EPT_POINTER, &eptp);
     printf("eptp: 0x%llx\n", eptp);
+
+	ulong rax, rcx;
+	current->vmctl.read_general_reg (GENERAL_REG_RAX, &rax);
+	current->vmctl.read_general_reg (GENERAL_REG_RCX, &rcx);
+
+	printf("rax:%d rcx:%d\n", rax, rcx);
+
 	add_ip ();
 }
 
