@@ -57,17 +57,16 @@ vt_ept_init (void)
 	for (i = 0; i < NUM_OF_EPTBL; i++) {
 		alloc_page (&ept->tbl2[i], &ept->tbl_phys2[i]);
 	}
-
-	ept->ptr_list[0] = ept->tbl_phys[0];
-	//ept->ptr_list[1] = ept->tbl_phys2[0];
-	ept->ptr_list[1] = 0xffffff;
+	u64 eptp = ept->ncr3tbl_phys |
+		       VMCS_EPT_POINTER_EPT_WB | VMCS_EPT_PAGEWALK_LENGTH_4;
+	ept->ptr_list[0] = eptp;
+	ept->ptr_list[1] = eptp;
 	printf("ptrlist[0]=0x%llx ptrlist[1]=0x%llx\n", ept->ptr_list[0], ept->ptr_list[1]);
 
 	ept->cnt = 0;
 	ept->cur.level = EPT_LEVELS;
 	current->u.vt.ept = ept;
-	asm_vmwrite64 (VMCS_EPT_POINTER, ept->ncr3tbl_phys |
-		       VMCS_EPT_POINTER_EPT_WB | VMCS_EPT_PAGEWALK_LENGTH_4);
+	asm_vmwrite64 (VMCS_EPT_POINTER, eptp);
 }
 
 static void
